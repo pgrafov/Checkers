@@ -14,12 +14,6 @@ class Tile:
     def __hash__(self):
         return hash((self.x, self.y))
 
-    def between(self, other_tile):
-        if abs(self.x - other_tile.x) == 1 and abs(self.y - other_tile.y) == 1:
-            return []
-        else:
-            return [Tile((self.x + other_tile.x) // 2, (self.y + other_tile.y) // 2)]
-
     def __repr__(self):
         return self.name
 
@@ -27,6 +21,7 @@ class Tile:
 class Board:
     def __init__(self):
         self.tiles = {}
+        self.positions = []
         for i in range(BOARD_SIZE):
             for j in range(BOARD_SIZE):
                 new_tile = Tile(i, BOARD_SIZE - (j + 1))
@@ -37,6 +32,13 @@ class Board:
 
     def get(self, x, y) -> Tile:
         return list(self.tiles.values())[x * BOARD_SIZE + y]
+
+    def set_initial_position(self, position):
+        self.positions = [position]
+
+    @property
+    def current_position(self):
+        return self.positions[-1] if self.positions else None
 
 
 class Piece:
@@ -76,12 +78,9 @@ class Position:
         self.pieces = self.blacks | self.whites
 
     def all_pieces(self):
-        for piece in self.whites.values():
-            yield piece
-        for piece in self.blacks.values():
-            yield piece
+        return self.pieces.values()
 
-    def move_piece(self, piece, new_tile):
+    def move_piece(self, piece, new_tile, captures=tuple(), crowned=False):
         old_position = piece.position
         my_dict = self.blacks if piece.black else self.whites
         opponent_dict = self.whites if piece.black else self.blacks
@@ -89,19 +88,11 @@ class Position:
         del self.pieces[old_position]
 
         piece.position = new_tile
-        if (piece.black and piece.y == BOARD_SIZE - 1) or (not piece.black and piece.y == 0):
+        if crowned:
             piece.king = True
         my_dict[piece.position] = piece
         self.pieces[piece.position] = piece
 
-        positions_in_between = new_tile.between(old_position)
-        for position in positions_in_between:
+        for position in captures:
             del opponent_dict[position]
             del self.pieces[position]
-
-
-if __name__ == '__main__':
-    board = Board()
-    for t in board.tiles.values():
-        print(t)
-

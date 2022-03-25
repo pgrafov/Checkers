@@ -16,3 +16,8 @@ TEXTBOX_WIDTH = 260
 
 SQUARE_SIZE = BOARD_WIDTH // BOARD_SIZE
 CROWN_SIZE = 19
+
+CROWN_IMG = "assets/crown.gif"
+CHECKERS_IMG = "assets/checkers.png"
+
+INITIAL_TEXT = "<p>Welcome!</p>"

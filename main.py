@@ -4,126 +4,94 @@ import logging
 import copy
 from pygame_gui.elements.ui_text_box import UITextBox
 
-from constants import COLOR_WHITE, COLOR_BLACK, COLOR_GREY, BOARD_WIDTH, SQUARE_SIZE, \
-    PIECE_PADDING, PIECE_OUTLINE, CROWN_SIZE, TEXTBOX_WIDTH
-from board import Position, Board, Piece, Move
+from constants import COLOR_WHITE, COLOR_BLACK, BOARD_WIDTH, SQUARE_SIZE, TEXTBOX_WIDTH, INITIAL_TEXT
+from board import Position, Board, Piece, Move, Tile
+from drawing import draw_board
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 LOGGER = logging.getLogger()
 
-CROWN = pygame.image.load('assets/crown.gif')
 
-
-def draw_board(window, board, position):
-    bg = pygame.image.load("assets/checkers.png")
-    window.blit(bg, (0, 0))
-    for tile in board.tiles.values():
-        sign_tile(window, tile)
-    for piece in position.all_pieces():
-        draw_piece(window, piece)
-
-
-def sign_tile(win, tile):
-    if tile.black:
-        font = pygame.font.SysFont("Calibri", 12)
-        img = font.render('%s' % (tile.name,), True, COLOR_GREY)
-        win.blit(img, (tile.x * (SQUARE_SIZE + 1), tile.y * (SQUARE_SIZE + 1)))
-
-
-def draw_piece(win, piece):
-    radius = SQUARE_SIZE // 2 - PIECE_PADDING
-    pygame.draw.circle(win, COLOR_GREY,
-                       (piece.x * SQUARE_SIZE + SQUARE_SIZE // 2, piece.y * SQUARE_SIZE + SQUARE_SIZE // 2),
-                       radius + PIECE_OUTLINE)
-    pygame.draw.circle(win, COLOR_BLACK if piece.black else COLOR_WHITE,
-                       (piece.x * SQUARE_SIZE + SQUARE_SIZE // 2, piece.y * SQUARE_SIZE + SQUARE_SIZE // 2),
-                       radius)
-    if piece.king:
-        win.blit(CROWN, (piece.x * SQUARE_SIZE + SQUARE_SIZE // 2 - CROWN_SIZE // 2,
-                         piece.y * SQUARE_SIZE + SQUARE_SIZE // 2 - CROWN_SIZE // 2))
-
-
-def get_tile_from_mouse(mouse_pos, position):
+def get_tile_from_mouse(mouse_pos, board):
     x, y = mouse_pos
     y = BOARD_WIDTH - y
-    board = position.board
     return board.get(x // SQUARE_SIZE, y // SQUARE_SIZE)
 
 
 def print_moves(moves):
-    return '<br>'.join(['%d. %s' % (i, m) for i, m in enumerate(moves, 1)])
+    return ''.join(['<p><font color="#%02x%02x%02x">%d. %s</font></p>' %
+                    (*(COLOR_WHITE if i % 2 else COLOR_BLACK), i, m) for i, m in enumerate(moves, 1)])
 
 
-def move_piece(window, text_box, piece: Piece, new_tile, positions, moves):
-    prev_position = positions[-1]
+def move_piece(board: Board, piece: Piece, new_tile: Tile, moves: list[Move]):
+    prev_position = board.current_position
     LOGGER.info("Move %s to %s", piece, new_tile)
-    new_position = copy.copy(prev_position)
     moves.append(Move(piece.position, new_tile))
+    new_position = copy.copy(prev_position)
     new_position.move_piece(piece, new_tile)
-    positions.append(new_position)
-    draw_board(window, positions[-1].board, positions[-1])
-    text_box.set_text('Welcome!<br>' + print_moves(moves))
+    board.positions.append(new_position)
 
 
-def start_game():
-    pygame.init()
-    window = pygame.display.set_mode((BOARD_WIDTH + TEXTBOX_WIDTH, BOARD_WIDTH))
-    pygame.display.set_caption("Checkers")
+class Game:
+    def __init__(self):
+        self.running = True
+        self.prev_clicked_tile = None
+        self.prev_clicked_piece = None
+        self.moves = []
+        self.board = Board()
+        self.board.set_initial_position(Position(self.board))
 
-    board = Board()
-    positions = [Position(board)]
-    moves = []
+        pygame.init()
+        pygame.display.set_caption("Checkers")
+        self.board_ui = pygame.display.set_mode((BOARD_WIDTH + TEXTBOX_WIDTH, BOARD_WIDTH))
+        self.board_ui.fill(COLOR_WHITE)
+        draw_board(self.board_ui, self.board)
 
-    window.fill(COLOR_WHITE)
-    draw_board(window, board, positions[-1])
+        self.ui_manager = pygame_gui.UIManager((BOARD_WIDTH + TEXTBOX_WIDTH, BOARD_WIDTH))
+        self.logger_ui = UITextBox(html_text=INITIAL_TEXT,
+                                   relative_rect=pygame.Rect(BOARD_WIDTH, 0, TEXTBOX_WIDTH, BOARD_WIDTH),
+                                   manager=self.ui_manager)
+        self.ui_manager.update(0.01)
+        self.ui_manager.draw_ui(window_surface=self.board_ui)
+        pygame.display.update()
 
-    ui_manager = pygame_gui.UIManager((BOARD_WIDTH + TEXTBOX_WIDTH, BOARD_WIDTH))
-    text_box = UITextBox(
-        html_text="Welcome!",
-        relative_rect=pygame.Rect(BOARD_WIDTH, 0, TEXTBOX_WIDTH, BOARD_WIDTH),
-        manager=ui_manager)
-    ui_manager.update(0.01)
-    ui_manager.draw_ui(window_surface=window)
-    pygame.display.update()
+    def handle_piece_move(self, clicked_tile):
+        move_piece(self.board, self.prev_clicked_piece, clicked_tile, self.moves)
+        draw_board(self.board_ui, self.board)
+        self.logger_ui.set_text(INITIAL_TEXT + print_moves(self.moves))
+        self.ui_manager.draw_ui(self.board_ui)
+        pygame.display.update()
+        self.prev_clicked_piece = self.prev_clicked_tile = None
 
-    running = True
-    prev_clicked_tile = None
-    prev_clicked_piece = None
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                if pygame.mouse.get_pos()[0] > BOARD_WIDTH:
-                    continue
-                clicked_tile = get_tile_from_mouse(pygame.mouse.get_pos(), positions[-1])
-                clicked_piece = positions[-1].pieces.get(clicked_tile)
-                LOGGER.debug("Clicked on tile %s, on piece %s", clicked_tile, clicked_piece)
-                if prev_clicked_tile and prev_clicked_piece and prev_clicked_tile != clicked_tile:
-                    move_piece(window, text_box, prev_clicked_piece, clicked_tile, positions, moves)
-                    ui_manager.draw_ui(window)
-                    pygame.display.update()
-                    prev_clicked_piece = prev_clicked_tile = None
-                elif prev_clicked_tile is None:
-                    prev_clicked_tile = clicked_tile
-                    prev_clicked_piece = clicked_piece
-                else:
-                    prev_clicked_piece = prev_clicked_tile = None
-            elif event.type == pygame.MOUSEBUTTONUP:
-                if pygame.mouse.get_pos()[0] > BOARD_WIDTH:
-                    continue
-                released_tile = get_tile_from_mouse(pygame.mouse.get_pos(), positions[-1])
-                released_piece = positions[-1].pieces.get(released_tile)
-                LOGGER.debug("Released on tile %s, on piece %s", released_tile, released_piece)
+    def start(self):
+        while self.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    tile = get_tile_from_mouse(pygame.mouse.get_pos(), self.board)
+                    if self.player_wants_to_move_piece(tile):
+                        self.handle_piece_move(tile)
+                    else:
+                        self.prev_clicked_tile = tile
+                        self.prev_clicked_piece = self.board.current_position.pieces.get(tile)
 
-                if prev_clicked_tile and released_tile != prev_clicked_tile and prev_clicked_piece:
-                    move_piece(window, text_box, prev_clicked_piece, released_tile, positions, moves)
-                    ui_manager.draw_ui(window)
-                    pygame.display.update()
-                    prev_clicked_piece = prev_clicked_tile = None
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    tile = get_tile_from_mouse(pygame.mouse.get_pos(), self.board)
+                    if self.player_wants_to_move_piece(tile):
+                        self.handle_piece_move(tile)
+
+    def player_wants_to_move_piece(self, tile):
+        if pygame.mouse.get_pos()[0] > BOARD_WIDTH:
+            return False
+        piece = self.board.current_position.pieces.get(tile)
+        LOGGER.debug("Released on tile %s, on piece %s", tile, piece)
+        LOGGER.debug("self.prev_clicked_tile = %s and self.prev_clicked_piece = %s",
+                     self.prev_clicked_tile, self.prev_clicked_piece)
+        return self.prev_clicked_tile and self.prev_clicked_piece and tile != self.prev_clicked_tile
 
 
 if __name__ == "__main__":
-    start_game()
-
+    game = Game()
+    game.start()

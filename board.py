@@ -1,21 +1,5 @@
-from constants import BOARD_SIZE, LETTERS, WHITES_INITIAL_POSITION, BLACKS_INITIAL_POSITION
-
-
-class Tile:
-    def __init__(self, x, y):
-        self.x = x
-        self.y = y
-        self.name = LETTERS[x] + str(BOARD_SIZE - y)
-        self.black = (y % 2 != x % 2)
-
-    def __eq__(self, other):
-        return self.x == other.x and self.y == other.y
-
-    def __hash__(self):
-        return hash((self.x, self.y))
-
-    def __repr__(self):
-        return self.name
+from constants import BOARD_SIZE, WHITES_INITIAL_POSITION, BLACKS_INITIAL_POSITION
+from tile import Tile
 
 
 class Board:
@@ -60,27 +44,36 @@ class Piece:
 
 
 class Move:
-    def __init__(self, before, after):
+    def __init__(self, before, after, captures=tuple(), gets_crowned=False):
         self.before = before
         self.after = after
+        self.captures = captures
+        self.gets_crowned = gets_crowned
 
     def __repr__(self):
         return f'{self.before}-{self.after}'
 
+    def __eq__(self, other):
+        return self.before == other.before and self.after == other.after
+
 
 class Position:
     def __init__(self, board, whites_str: str = WHITES_INITIAL_POSITION, blacks_str: str = BLACKS_INITIAL_POSITION):
-        self.board = board
         self.whites = {board[tile_name.strip().upper()]: Piece(board[tile_name.strip().upper()], False)
                        for tile_name in whites_str.split(',')}
         self.blacks = {board[tile_name.strip().upper()]: Piece(board[tile_name.strip().upper()], True)
                        for tile_name in blacks_str.split(',')}
         self.pieces = self.blacks | self.whites
 
+    def __getitem__(self, tile: Tile) -> Piece:
+        return self.pieces.get(tile)
+
     def all_pieces(self):
         return self.pieces.values()
 
-    def move_piece(self, piece, new_tile, captures=tuple(), crowned=False):
+    def move_piece(self, move):
+        piece = self.pieces[move.before]
+        new_tile = move.after
         old_position = piece.position
         my_dict = self.blacks if piece.black else self.whites
         opponent_dict = self.whites if piece.black else self.blacks
@@ -88,11 +81,11 @@ class Position:
         del self.pieces[old_position]
 
         piece.position = new_tile
-        if crowned:
+        if move.gets_crowned:
             piece.king = True
         my_dict[piece.position] = piece
         self.pieces[piece.position] = piece
 
-        for position in captures:
+        for position in move.captures:
             del opponent_dict[position]
             del self.pieces[position]

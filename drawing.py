@@ -12,7 +12,6 @@ def draw_board(window, board):
     for tile in board.tiles.values():
         sign_tile(window, tile)
     for piece in position.all_pieces():
-        print (piece)
         draw_piece(window, piece)
 
 

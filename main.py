@@ -1,15 +1,14 @@
 import pygame
 import pygame_gui
 import logging
-import copy
 from pygame_gui.elements.ui_text_box import UITextBox
 
 from constants import COLOR_WHITE, COLOR_BLACK, BOARD_WIDTH, SQUARE_SIZE, TEXTBOX_WIDTH, INITIAL_TEXT
-from board import Position, Board, Piece, Move, Tile
+from board import Position, Board, Move
 from drawing import draw_board
+from referee import Referee, move_piece
 
-
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger()
 
 
@@ -24,15 +23,6 @@ def print_moves(moves):
                     (*(COLOR_WHITE if i % 2 else COLOR_BLACK), i, m) for i, m in enumerate(moves, 1)])
 
 
-def move_piece(board: Board, piece: Piece, new_tile: Tile, moves: list[Move]):
-    prev_position = board.current_position
-    LOGGER.info("Move %s to %s", piece, new_tile)
-    moves.append(Move(piece.position, new_tile))
-    new_position = copy.copy(prev_position)
-    new_position.move_piece(piece, new_tile)
-    board.positions.append(new_position)
-
-
 class Game:
     def __init__(self):
         self.running = True
@@ -41,6 +31,7 @@ class Game:
         self.moves = []
         self.board = Board()
         self.board.set_initial_position(Position(self.board))
+        self.referee = Referee(self.board)
 
         pygame.init()
         pygame.display.set_caption("Checkers")
@@ -57,11 +48,16 @@ class Game:
         pygame.display.update()
 
     def handle_piece_move(self, clicked_tile):
-        move_piece(self.board, self.prev_clicked_piece, clicked_tile, self.moves)
-        draw_board(self.board_ui, self.board)
-        self.logger_ui.set_text(INITIAL_TEXT + print_moves(self.moves))
-        self.ui_manager.draw_ui(self.board_ui)
-        pygame.display.update()
+        proposed_move = Move(self.prev_clicked_piece.position, clicked_tile)
+        LOGGER.info('Proposed move - %s' % (proposed_move,))
+        for move in self.referee.get_all_possible_moves():
+            if move == proposed_move:
+                move_piece(self.board, move, self.moves)
+                draw_board(self.board_ui, self.board)
+                self.logger_ui.set_text(INITIAL_TEXT + print_moves(self.moves))
+                self.ui_manager.draw_ui(self.board_ui)
+                pygame.display.update()
+                break
         self.prev_clicked_piece = self.prev_clicked_tile = None
 
     def start(self):
@@ -86,7 +82,7 @@ class Game:
         if pygame.mouse.get_pos()[0] > BOARD_WIDTH:
             return False
         piece = self.board.current_position.pieces.get(tile)
-        LOGGER.debug("Released on tile %s, on piece %s", tile, piece)
+        LOGGER.debug("Currently on tile %s, on piece %s", tile, piece)
         LOGGER.debug("self.prev_clicked_tile = %s and self.prev_clicked_piece = %s",
                      self.prev_clicked_tile, self.prev_clicked_piece)
         return self.prev_clicked_tile and self.prev_clicked_piece and tile != self.prev_clicked_tile

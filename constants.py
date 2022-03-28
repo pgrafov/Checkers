@@ -1,3 +1,4 @@
+from itertools import cycle
 BOARD_SIZE = 8
 
 LETTERS = 'ABCDEFGH'
@@ -19,5 +20,7 @@ CROWN_SIZE = 19
 
 CROWN_IMG = "assets/crown.gif"
 CHECKERS_IMG = "assets/checkers.png"
+BOUNCE = cycle([0, 1, 2, 4, 5, 4, 3, 2, 1])
+FPS = 30
 
 INITIAL_TEXT = "<p>Welcome!</p>"

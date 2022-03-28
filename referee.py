@@ -37,6 +37,9 @@ class Referee:
 
         return Move(start_tile, next_tile)
 
+    def get_all_pieces_that_can_move(self):
+        return set([self.board.current_position[move.before] for move in self.get_all_possible_moves()])
+
     def get_all_possible_moves(self) -> list[Move]:
         whites = self.board.current_position.whites
         blacks = self.board.current_position.blacks
@@ -54,7 +57,9 @@ class Referee:
                 move = self.get_move(tile, neighbour)
                 if move:
                     moves.append(move)
-        return moves
+        moves.sort(key=lambda m: len(m.captures), reverse=True)
+        max_captures = moves[0].captures if moves else 0
+        return [move for move in moves if move.captures == max_captures]
 
 
 if __name__ == "__main__":

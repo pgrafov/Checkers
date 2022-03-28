@@ -51,7 +51,7 @@ class Move:
         self.gets_crowned = gets_crowned
 
     def __repr__(self):
-        return f'{self.before}-{self.after}'
+        return f'{self.before}-{self.after}' if not self.captures else f'{self.before}:{self.after}'
 
     def __eq__(self, other):
         return self.before == other.before and self.after == other.after

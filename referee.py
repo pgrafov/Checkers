@@ -1,7 +1,8 @@
 import logging
 import copy
+from typing import Optional
 from tile import VECTORS, VECTORS_BLACK, X2, MINUS
-from board import Board, Position, Move
+from board import Board, Move, Tile, Piece
 from constants import BOARD_SIZE
 
 
@@ -9,8 +10,9 @@ logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger()
 
 
-def gets_crowned(piece, tile):
+def gets_crowned(piece: Piece, tile: Tile) -> bool:
     return (tile.y == 0 and not piece.black) or (tile.y == BOARD_SIZE - 1 and piece.black)
+
 
 def move_piece(board: Board, move: Move, moves: list[Move]):
     LOGGER.info("Move: %s", move)
@@ -21,17 +23,17 @@ def move_piece(board: Board, move: Move, moves: list[Move]):
 
 
 class Referee:
-
     def __init__(self, board: Board):
         self.board = board
 
-    def get_all_moves_starting_at(self, tile, piece):
+    def get_all_moves_starting_at(self, tile: Tile, piece: Piece) -> list[Move]:
         capturing_moves = self.get_all_capturing_moves_starting_at(tile, piece)
         if capturing_moves:
             return self.filter_out_capturing_moves(capturing_moves)
         return self.get_all_non_capturing_moves_starting_at(tile, piece)
 
-    def get_all_capturing_moves_starting_at(self, tile, piece, capturing_vector=None):
+    def get_all_capturing_moves_starting_at(self, tile: Tile, piece: Piece,
+                                            capturing_vector: Optional[tuple[int]] = None) -> list[Move]:
         current_position = self.board.current_position
         moves = []
         if not piece.king:
@@ -54,7 +56,7 @@ class Referee:
             raise NotImplementedError
         return moves
 
-    def get_all_non_capturing_moves_starting_at(self, tile, piece):
+    def get_all_non_capturing_moves_starting_at(self, tile: Tile, piece: Piece) -> list[Move]:
         moves = []
         if not piece.king:
             for vector in VECTORS:
@@ -81,10 +83,10 @@ class Referee:
             return self.filter_out_capturing_moves(capturing_moves)
         return non_capturing_moves
 
-    def get_all_pieces_that_can_move(self):
+    def get_all_pieces_that_can_move(self) -> set[Piece]:
         return set([self.board.current_position[move.before] for move in self.get_all_possible_moves()])
 
-    def filter_out_capturing_moves(self, moves):
+    def filter_out_capturing_moves(self, moves: list[Move]) -> list[Move]:
         moves.sort(key=lambda m: len(m.captures), reverse=True)
         max_captures = moves[0].captures if moves else 0
         return [move for move in moves if move.captures == max_captures]

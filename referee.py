@@ -1,12 +1,16 @@
 import logging
 import copy
-from typing import Optional
-from board import Board, Position, Move, Piece, Tile
+from tile import VECTORS, VECTORS_BLACK, X2, MINUS
+from board import Board, Position, Move
+from constants import BOARD_SIZE
 
 
 logging.basicConfig(level=logging.INFO)
 LOGGER = logging.getLogger()
 
+
+def gets_crowned(piece, tile):
+    return (tile.y == 0 and not piece.black) or (tile.y == BOARD_SIZE - 1 and piece.black)
 
 def move_piece(board: Board, move: Move, moves: list[Move]):
     LOGGER.info("Move: %s", move)
@@ -21,56 +25,66 @@ class Referee:
     def __init__(self, board: Board):
         self.board = board
 
-    def make_capturing_move(self, start_tile: Tile, next_tile: Tile ) -> Optional[Move]:
-        vector = (next_tile.x - start_tile.x, next_tile.y - start_tile.y)
-        if Tile.is_valid(next_tile.x + vector[0], next_tile.y + vector[1]) and \
-                self.board.current_position[Tile(next_tile.x + vector[0], next_tile.y + vector[1])] is None:
-            return Move(start_tile, Tile(next_tile.x + vector[0], next_tile.y + vector[1]), captures=(next_tile,))
-        return None
+    def get_all_moves_starting_at(self, tile, piece):
+        capturing_moves = self.get_all_capturing_moves_starting_at(tile, piece)
+        if capturing_moves:
+            return self.filter_out_capturing_moves(capturing_moves)
+        return self.get_all_non_capturing_moves_starting_at(tile, piece)
 
-    def get_move(self, start_tile, next_tile):
-        if self.board.current_position[next_tile]:
-            if self.board.current_position[next_tile].black == self.board.current_position[start_tile].black:
-                return None
-            else:
-                return self.make_capturing_move(start_tile, next_tile)
+    def get_all_capturing_moves_starting_at(self, tile, piece, capturing_vector=None):
+        current_position = self.board.current_position
+        moves = []
+        if not piece.king:
+            for vector in VECTORS:
+                if capturing_vector is not None and vector == MINUS(capturing_vector):
+                    continue
+                if (tile + vector and tile + X2(vector) and
+                        current_position[tile + vector] is not None and
+                        current_position[tile + vector].black != piece.black and
+                        current_position[tile + X2(vector)] is None):
+                    move = Move(tile, tile + X2(vector), captures=(tile + vector,),
+                                gets_crowned=gets_crowned(piece, tile + X2(vector)))
+                    moves2 = self.get_all_capturing_moves_starting_at(tile + X2(vector), piece, vector)
+                    if not moves2:
+                        moves.append(move)
+                    else:
+                        for move2 in moves2:
+                            moves.append(move + move2)
+        else:
+            raise NotImplementedError
+        return moves
 
-        return Move(start_tile, next_tile)
-
-    def get_all_pieces_that_can_move(self):
-        return set([self.board.current_position[move.before] for move in self.get_all_possible_moves()])
+    def get_all_non_capturing_moves_starting_at(self, tile, piece):
+        moves = []
+        if not piece.king:
+            for vector in VECTORS:
+                if tile + vector:
+                    if self.board.current_position[tile + vector] is None:
+                        if (piece.black and vector in VECTORS_BLACK) or \
+                                (not piece.black and vector not in VECTORS_BLACK):
+                            moves.append(Move(tile, tile + vector, gets_crowned=gets_crowned(piece, tile + vector)))
+        else:
+            raise NotImplementedError
+        return moves
 
     def get_all_possible_moves(self) -> list[Move]:
         whites = self.board.current_position.whites
         blacks = self.board.current_position.blacks
         tiles = whites if len(self.board.positions) % 2 else blacks
-        moves = []
+        capturing_moves = []
+        non_capturing_moves = []
         for tile, piece in tiles.items():
-            if piece.king:
-                neighbours = [tile.top_left(), tile.top_right(), tile.bottom_left(), tile.bottom_right()]
-            elif not piece.black:
-                neighbours = [tile.top_left(), tile.top_right()]
-            else:
-                neighbours = [tile.bottom_left(), tile.bottom_right()]
-            neighbours = [neighbour for neighbour in neighbours if not neighbour is None]
-            for neighbour in neighbours:
-                move = self.get_move(tile, neighbour)
-                if move:
-                    moves.append(move)
+            capturing_moves += self.get_all_capturing_moves_starting_at(tile, piece)
+            if not capturing_moves:
+                non_capturing_moves += self.get_all_non_capturing_moves_starting_at(tile, piece)
+        if capturing_moves:
+            return self.filter_out_capturing_moves(capturing_moves)
+        return non_capturing_moves
+
+    def get_all_pieces_that_can_move(self):
+        return set([self.board.current_position[move.before] for move in self.get_all_possible_moves()])
+
+    def filter_out_capturing_moves(self, moves):
         moves.sort(key=lambda m: len(m.captures), reverse=True)
         max_captures = moves[0].captures if moves else 0
         return [move for move in moves if move.captures == max_captures]
-
-
-if __name__ == "__main__":
-    board = Board()
-    moves = []
-    position = Position(board)
-    board.set_initial_position(position)
-    ref = Referee(board)
-    for move in ref.get_all_possible_moves():
-        print (move)
-    move_piece(board, board.current_position[move.before], move.after, moves)
-    print ('============================')
-    for move in ref.get_all_possible_moves():
-        print (move)

@@ -53,6 +53,9 @@ class Move:
     def __repr__(self):
         return f'{self.before}-{self.after}' if not self.captures else f'{self.before}:{self.after}'
 
+    def __add__(self, other):
+        return Move(self.before, other.after, self.captures + other.captures)
+
     def __eq__(self, other):
         return self.before == other.before and self.after == other.after
 

@@ -31,4 +31,4 @@ def draw_piece(win, piece, bounce=0):
                        radius)
     if piece.king:
         win.blit(CROWN, (piece.x * SQUARE_SIZE + SQUARE_SIZE // 2 - CROWN_SIZE // 2,
-                         piece.y * SQUARE_SIZE + SQUARE_SIZE // 2 - CROWN_SIZE // 2))
+                         piece.y * SQUARE_SIZE + SQUARE_SIZE // 2 - CROWN_SIZE // 2 + bounce))

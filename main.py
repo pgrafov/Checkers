@@ -5,7 +5,9 @@ from pygame_gui.elements.ui_text_box import UITextBox
 import logging
 
 from constants import COLOR_WHITE, COLOR_BLACK, BOARD_WIDTH, SQUARE_SIZE, TEXTBOX_WIDTH, INITIAL_TEXT, BOUNCE, FPS
-from board import Position, Board, Move
+from position import Position
+from board import Board
+from move import Move
 from drawing import draw_board, draw_piece
 from referee import Referee, move_piece
 
@@ -14,6 +16,8 @@ LOGGER = logging.getLogger()
 
 
 def get_tile_from_mouse(mouse_pos, board):
+    if pygame.mouse.get_pos()[0] > BOARD_WIDTH:
+        return None
     return board.get(mouse_pos[0] // SQUARE_SIZE, (BOARD_WIDTH - mouse_pos[1]) // SQUARE_SIZE)
 
 
@@ -29,7 +33,7 @@ class Game:
         self.prev_clicked_piece = None
         self.moves = []
         self.board = Board()
-        self.board.set_initial_position(Position(self.board))
+        self.board.set_initial_position(Position(self.board, '18,24,27,28,K10,K15', '12,16,20,K22,K25,K29'))
         self.referee = Referee(self.board)
         self.clock = pygame.time.Clock()
 
@@ -86,8 +90,6 @@ class Game:
                     self.handle_piece_move(tile)
 
     def player_wants_to_move_piece(self, tile):
-        if pygame.mouse.get_pos()[0] > BOARD_WIDTH:
-            return False
         piece = self.board.current_position.pieces.get(tile)
         LOGGER.debug("Currently on tile %s, on piece %s", tile, piece)
         return self.prev_clicked_tile and self.prev_clicked_piece and tile != self.prev_clicked_tile

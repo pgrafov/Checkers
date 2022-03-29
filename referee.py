@@ -2,7 +2,10 @@ import logging
 import copy
 from typing import Optional
 from tile import VECTORS, VECTORS_BLACK, X2, MINUS
-from board import Board, Move, Tile, Piece
+from board import Board
+from move import Move
+from tile import Tile
+from piece import Piece
 from constants import BOARD_SIZE
 
 
@@ -11,7 +14,7 @@ LOGGER = logging.getLogger()
 
 
 def gets_crowned(piece: Piece, tile: Tile) -> bool:
-    return (tile.y == 0 and not piece.black) or (tile.y == BOARD_SIZE - 1 and piece.black)
+    return not piece.king and ((tile.y == 0 and not piece.black) or (tile.y == BOARD_SIZE - 1 and piece.black))
 
 
 def move_piece(board: Board, move: Move, moves: list[Move]):
@@ -53,7 +56,7 @@ class Referee:
                         for move2 in moves2:
                             moves.append(move + move2)
         else:
-            raise NotImplementedError
+            return [] #raise NotImplementedError
         return moves
 
     def get_all_non_capturing_moves_starting_at(self, tile: Tile, piece: Piece) -> list[Move]:
@@ -66,7 +69,26 @@ class Referee:
                                 (not piece.black and vector not in VECTORS_BLACK):
                             moves.append(Move(tile, tile + vector, gets_crowned=gets_crowned(piece, tile + vector)))
         else:
-            raise NotImplementedError
+            top_left = list(tile.top_left())
+            top_right = list(tile.top_right())
+            bottom_right = list(tile.bottom_right())
+            bottom_left = list(tile.bottom_left())
+            directions = [top_left, top_right, bottom_left, bottom_right]
+            for direction in directions:
+                moves_direction = []
+                include_direction = True
+                for i, tile2 in enumerate(direction):
+                    if self.board.current_position[tile2] is None:
+                        moves_direction.append(tile2)
+                    else:
+                        if not(self.board.current_position[tile2].black == piece.black or
+                               (self.board.current_position[tile2].black != piece.black and
+                                (i == len(direction) - 1 or self.board.current_position[direction[i+1]] is not None))):
+                            include_direction = False
+                        break
+                if include_direction:
+                    for tile3 in moves_direction:
+                        moves.append(Move(tile, tile3))
         return moves
 
     def get_all_possible_moves(self) -> list[Move]:

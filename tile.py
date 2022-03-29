@@ -29,9 +29,44 @@ class Tile:
     def __repr__(self):
         return self.name
 
-    def __add__(self, vctr: tuple[int]):
+    def __add__(self, vctr: tuple[int, int]):
         return Tile(self.x + vctr[0], self.y + vctr[1]) if Tile.is_valid(self.x + vctr[0], self.y + vctr[1]) else None
 
     @classmethod
     def is_valid(cls, new_x, new_y):
         return 0 <= new_x < BOARD_SIZE and 0 <= new_y < BOARD_SIZE
+
+    @classmethod
+    def from_string(cls, vertical, number):
+        if vertical:
+            return Tile(LETTERS.index(vertical), BOARD_SIZE - int(number))
+        else:
+            x = (int(number) - 1) * 2 % BOARD_SIZE
+            y = (int(number) - 1) * 2 // BOARD_SIZE
+            if y % 2 == x % 2:
+                x += 1
+            return Tile(x, y)
+
+    @property
+    def number(self):
+        return str((BOARD_SIZE * self.y + self.x) // 2 + 1)
+
+    def top_left(self):
+        tile = self
+        while tile := tile + VECTOR_TOP_LEFT:
+            yield tile
+
+    def top_right(self):
+        tile = self
+        while tile := tile + VECTOR_TOP_RIGHT:
+            yield tile
+
+    def bottom_left(self):
+        tile = self
+        while tile := tile + VECTOR_BOTTOM_LEFT:
+            yield tile
+
+    def bottom_right(self):
+        tile = self
+        while tile := tile + VECTOR_BOTTOM_RIGHT:
+            yield tile

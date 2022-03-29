@@ -1,5 +1,6 @@
 from tile import Tile
 
+
 class Move:
     def __init__(self, before: Tile, after: Tile, captures=tuple(), gets_crowned=False):
         self.before = before
@@ -11,7 +12,7 @@ class Move:
         return f'{self.before}-{self.after}' if not self.captures else f'{self.before}:{self.after}'
 
     def __add__(self, other):
-        return Move(self.before, other.after, self.captures + other.captures)
+        return Move(self.before, other.after, self.captures + other.captures, other.gets_crowned)
 
     def __eq__(self, other):
         return self.before == other.before and self.after == other.after

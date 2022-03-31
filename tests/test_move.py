@@ -12,3 +12,4 @@ def test_move():
                                                    captures=(Tile.from_string('D4'), Tile.from_string('D6'),
                                                              Tile.from_string('B6'), Tile.from_string('B4')))
     assert str(move1 + move2 + move3 + move4) == 'C3:C3'
+    assert repr(move1 + move2 + move3 + move4) == 'Move(C3, C3, (D4, D6, B6, B4), False)'

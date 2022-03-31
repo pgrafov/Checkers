@@ -8,8 +8,12 @@ class Move:
         self.captures = captures
         self.gets_crowned = gets_crowned
 
-    def __repr__(self):
+    def __str__(self):
         return f'{self.before}-{self.after}' if not self.captures else f'{self.before}:{self.after}'
+
+    def __repr__(self):
+        class_name = self.__class__.__name__
+        return "%s(%r, %r, %r, %r)" % (class_name, self.before, self.after, self.captures, self.gets_crowned)
 
     def __add__(self, other):
         return Move(self.before, other.after, self.captures + other.captures, other.gets_crowned)

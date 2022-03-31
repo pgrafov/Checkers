@@ -66,6 +66,7 @@ class Referee:
 
     def get_all_capturing_moves_for_king(self, tile: Tile, piece: Piece,
                                          capturing_vector: Optional[tuple[int]] = None) -> list[Move]:
+        curr_position = self.board.current_position
         moves = []
         directions = {VECTOR_TOP_LEFT: list(tile.top_left()), VECTOR_TOP_RIGHT: list(tile.top_right()),
                       VECTOR_BOTTOM_RIGHT: list(tile.bottom_right()), VECTOR_BOTTOM_LEFT: list(tile.bottom_left())}
@@ -73,9 +74,8 @@ class Referee:
             if capturing_vector is not None and vector == MINUS(capturing_vector):
                 continue
             for i in range(1, len(direction)):
-                if (self.board.current_position[direction[i-1]] is not None
-                        and self.board.current_position[direction[i-1]].black != piece.black
-                        and self.board.current_position[direction[i]] is None):
+                if (curr_position[direction[i-1]] is not None  and curr_position[direction[i-1]].black != piece.black
+                        and curr_position[direction[i]] is None):
                     move = Move(tile, direction[i], captures=(direction[i-1],))
                     moves2 = self.get_all_capturing_moves_for_king(direction[i], piece, vector)
                     if not moves2:
@@ -87,6 +87,10 @@ class Referee:
                     else:
                         for move2 in moves2:
                             moves.append(move + move2)
+                    break
+                elif ((curr_position[direction[i-1]] is not None and curr_position[direction[i-1]].black == piece.black)
+                      or (curr_position[direction[i-1]] is not None and curr_position[direction[i]] is not None)):
+                    break
         return moves
 
     def get_all_non_capturing_moves(self, tile: Tile, piece: Piece) -> list[Move]:
@@ -148,6 +152,6 @@ class Referee:
 
     def filter_out_capturing_moves(self, moves: list[Move]) -> list[Move]:
         moves.sort(key=lambda m: len(m.captures), reverse=True)
-        max_captures = moves[0].captures if moves else 0
-        return [move for move in moves if move.captures == max_captures]
+        max_captures = len(moves[0].captures) if moves else 0
+        return [move for move in moves if len(move.captures) == max_captures]
 

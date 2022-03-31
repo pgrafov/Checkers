@@ -51,8 +51,9 @@ class Game:
     def handle_piece_move(self, clicked_tile):
         proposed_move = Move(self.prev_clicked_piece.position, clicked_tile)
         LOGGER.info('Proposed move - %s' % (proposed_move,))
+        LOGGER.info (self.referee.get_all_possible_moves())
         for move in self.referee.get_all_possible_moves():
-            if move == proposed_move:
+            if move.before == proposed_move.before and move.after == proposed_move.after:
                 move_piece(self.board, move, self.moves)
                 self.logger_ui.set_text(INITIAL_TEXT + print_moves(self.moves))
                 self.ui_manager.draw_ui(self.board_ui)

@@ -1,13 +1,22 @@
-from notation import parse_pieces
+from typing import Optional
+
+from notation import parse_pieces, parse_position
 from tile import Tile
 from piece import Piece
 from constants import WHITES_INITIAL_POSITION, BLACKS_INITIAL_POSITION
 
+WHITES_TURN = 'W'
+BLACKS_TURN = 'B'
+
 
 class Position:
-    def __init__(self, board, whites_str: str = WHITES_INITIAL_POSITION, blacks_str: str = BLACKS_INITIAL_POSITION):
+    def __init__(self, board, whites_str: str = WHITES_INITIAL_POSITION, blacks_str: str = BLACKS_INITIAL_POSITION,
+                 notation: Optional[str] = None, turn: str = WHITES_TURN):
+        if notation:
+            whites_str, blacks_str, turn = parse_position(notation)
         self.whites = parse_pieces(whites_str, board, False)
         self.blacks = parse_pieces(blacks_str, board, True)
+        self.turn = turn
         self.pieces = self.blacks | self.whites
 
     def __getitem__(self, tile: Tile) -> Piece:
@@ -34,3 +43,5 @@ class Position:
         for position in move.captures:
             del opponent_dict[position]
             del self.pieces[position]
+
+        self.turn = WHITES_TURN if self.turn == BLACKS_TURN else BLACKS_TURN

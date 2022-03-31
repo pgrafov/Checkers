@@ -1,12 +1,14 @@
 import logging
 import copy
 from typing import Optional
+
 from tile import VECTORS, VECTORS_BLACK, X2, MINUS, \
     VECTOR_TOP_LEFT, VECTOR_TOP_RIGHT, VECTOR_BOTTOM_LEFT, VECTOR_BOTTOM_RIGHT
 from board import Board
 from move import Move
 from tile import Tile
 from piece import Piece
+from position import WHITES_TURN
 from constants import BOARD_SIZE
 
 
@@ -136,7 +138,7 @@ class Referee:
     def get_all_possible_moves(self) -> list[Move]:
         whites = self.board.current_position.whites
         blacks = self.board.current_position.blacks
-        tiles = whites if len(self.board.positions) % 2 else blacks
+        tiles = whites if self.board.current_position.turn == WHITES_TURN else blacks
         capturing_moves = []
         non_capturing_moves = []
         for tile, piece in tiles.items():

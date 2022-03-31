@@ -15,4 +15,5 @@ class Move:
         return Move(self.before, other.after, self.captures + other.captures, other.gets_crowned)
 
     def __eq__(self, other):
-        return self.before == other.before and self.after == other.after
+        return self.before == other.before and self.after == other.after and \
+               self.captures == other.captures and self.gets_crowned == other.gets_crowned

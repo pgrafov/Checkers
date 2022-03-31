@@ -16,7 +16,7 @@ PIECE_REGEXP = re.compile('(?P<is_king>K)?(?P<vertical>[A-H])?(?P<number>\d+)')
 
 def parse_piece(piece: str) -> tuple[bool, Tile]:
     m = PIECE_REGEXP.match(piece)
-    return bool(m.group('is_king')), Tile.from_string(m.group('vertical'), m.group('number'))
+    return bool(m.group('is_king')), Tile.from_string((m.group('vertical') or '') + m.group('number'))
 
 
 def parse_pieces(pieces_str: str, board: Board, is_black: bool):

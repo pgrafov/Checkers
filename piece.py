@@ -1,5 +1,6 @@
 from tile import Tile
 
+
 class Piece:
     def __init__(self, position: Tile, black: bool, king: bool = False):
         self.position = position
@@ -15,4 +16,4 @@ class Piece:
         return self.position.y
 
     def __repr__(self):
-        return f'{"black" if self.black else "white"} {"king" if self.king else "piece"} on {self.position}'
+        return f'{"black" if self.black else "white"} {"king" if self.king else "man"} on {self.position}'

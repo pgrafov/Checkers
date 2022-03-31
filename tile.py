@@ -37,12 +37,12 @@ class Tile:
         return 0 <= new_x < BOARD_SIZE and 0 <= new_y < BOARD_SIZE
 
     @classmethod
-    def from_string(cls, vertical, number):
-        if vertical:
-            return Tile(LETTERS.index(vertical), BOARD_SIZE - int(number))
+    def from_string(cls, string: str):
+        if not string.isdigit():
+            return Tile(LETTERS.index(string[0]), BOARD_SIZE - int(string[1:]))
         else:
-            x = (int(number) - 1) * 2 % BOARD_SIZE
-            y = (int(number) - 1) * 2 // BOARD_SIZE
+            x = (int(string) - 1) * 2 % BOARD_SIZE
+            y = (int(string) - 1) * 2 // BOARD_SIZE
             if y % 2 == x % 2:
                 x += 1
             return Tile(x, y)

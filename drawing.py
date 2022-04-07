@@ -1,4 +1,4 @@
-import pygame
+import pygame  # type: ignore
 from constants import COLOR_WHITE, COLOR_BLACK, COLOR_GREY, SQUARE_SIZE, \
     PIECE_PADDING, PIECE_OUTLINE, CROWN_SIZE, CROWN_IMG, CHECKERS_IMG, BOARD_WIDTH
 

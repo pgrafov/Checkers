@@ -39,26 +39,28 @@ class Referee:
         return self.get_all_non_capturing_moves(tile, piece)
 
     def get_all_capturing_moves(self, tile: Tile, piece: Piece,
-                                capturing_vector: Optional[tuple[int]] = None) -> list[Move]:
+                                capturing_vector: Optional[tuple[int, int]] = None) -> list[Move]:
         if piece.king:
             return self.get_all_capturing_moves_for_king(tile, piece, capturing_vector)
         else:
             return self.get_all_capturing_moves_for_man(tile, piece, capturing_vector)
 
     def get_all_capturing_moves_for_man(self, tile: Tile, piece: Piece,
-                                        capturing_vector: Optional[tuple[int]] = None) -> list[Move]:
+                                        capturing_vector: Optional[tuple[int, int]] = None) -> list[Move]:
         current_position = self.board.current_position
         moves = []
         for vector in VECTORS:
             if capturing_vector is not None and vector == MINUS(capturing_vector):
                 continue
-            if (tile + vector and tile + X2(vector) and
-                    current_position[tile + vector] is not None and
-                    current_position[tile + vector].black != piece.black and
-                    current_position[tile + X2(vector)] is None):
-                move = Move(tile, tile + X2(vector), captures=(tile + vector,),
-                            gets_crowned=gets_crowned(piece, tile + X2(vector)))
-                moves2 = self.get_all_capturing_moves_for_man(tile + X2(vector), piece, vector)
+            next_tile = tile + vector
+            next_next_tile = tile + X2(vector)
+            if (next_tile and next_next_tile and
+                    current_position[next_tile] is not None and
+                    current_position[next_tile].black != piece.black and
+                    current_position[next_next_tile] is None):
+                move = Move(tile, next_next_tile, captures=(next_tile,),
+                            gets_crowned=gets_crowned(piece, next_next_tile))
+                moves2 = self.get_all_capturing_moves_for_man(next_next_tile, piece, vector)
                 if not moves2:
                     moves.append(move)
                 else:
@@ -67,7 +69,7 @@ class Referee:
         return moves
 
     def get_all_capturing_moves_for_king(self, tile: Tile, piece: Piece,
-                                         capturing_vector: Optional[tuple[int]] = None) -> list[Move]:
+                                         capturing_vector: Optional[tuple[int, int]] = None) -> list[Move]:
         curr_position = self.board.current_position
         moves = []
         directions = {VECTOR_TOP_LEFT: list(tile.top_left()), VECTOR_TOP_RIGHT: list(tile.top_right()),
@@ -104,11 +106,12 @@ class Referee:
     def get_all_non_capturing_moves_for_man(self, tile: Tile, piece: Piece) -> list[Move]:
         moves = []
         for vector in VECTORS:
-            if tile + vector:
-                if self.board.current_position[tile + vector] is None:
+            next_tile = tile + vector
+            if next_tile:
+                if self.board.current_position[next_tile] is None:
                     if (piece.black and vector in VECTORS_BLACK) or \
                             (not piece.black and vector not in VECTORS_BLACK):
-                        moves.append(Move(tile, tile + vector, gets_crowned=gets_crowned(piece, tile + vector)))
+                        moves.append(Move(tile, next_tile, gets_crowned=gets_crowned(piece, next_tile)))
         return moves
 
     def get_all_non_capturing_moves_for_king(self, tile: Tile, piece: Piece) -> list[Move]:

@@ -1,6 +1,6 @@
-import pygame
-import pygame_gui
-from pygame_gui.elements.ui_text_box import UITextBox
+import pygame  # type: ignore
+import pygame_gui  # type: ignore
+from pygame_gui.elements.ui_text_box import UITextBox  # type: ignore
 
 import logging
 

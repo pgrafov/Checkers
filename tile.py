@@ -1,16 +1,17 @@
 from constants import BOARD_SIZE, LETTERS
+from typing import Callable, Optional
 
 VECTOR_TOP_LEFT = (-1, -1)
 VECTOR_TOP_RIGHT = (+1, -1)
 VECTOR_BOTTOM_LEFT = (-1, +1)
 VECTOR_BOTTOM_RIGHT = (+1, +1)
-X2 = lambda x: tuple(i*2 for i in x)
-MINUS = lambda x: tuple(-i for i in x)
+X2: Callable[[tuple[int, int]], tuple[int, int]] = lambda x: (x[0] * 2, x[1] * 2)
+MINUS: Callable[[tuple[int, int]], tuple[int, int]] = lambda x: (-x[0], -x[1])
 
 VECTORS_WHITE = [VECTOR_TOP_LEFT, VECTOR_TOP_RIGHT]
 VECTORS_BLACK = [VECTOR_BOTTOM_RIGHT, VECTOR_BOTTOM_LEFT]
 
-VECTORS = VECTORS_BLACK + VECTORS_WHITE
+VECTORS: list[tuple[int, int]] = VECTORS_BLACK + VECTORS_WHITE
 
 
 class Tile:
@@ -29,7 +30,7 @@ class Tile:
     def __repr__(self):
         return self.name
 
-    def __add__(self, vctr: tuple[int, int]):
+    def __add__(self, vctr: tuple[int, int]) -> Optional['Tile']:
         return Tile(self.x + vctr[0], self.y + vctr[1]) if Tile.is_valid(self.x + vctr[0], self.y + vctr[1]) else None
 
     @classmethod
